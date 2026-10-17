@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>便签助手 | Memo Notes</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#fff;color:#333;height:100vh;overflow-y:auto;user-select:none}
+.lang-btn{position:fixed;top:16px;left:16px;background:transparent;border:2px solid #00BCD4;color:#00BCD4;font-size:12px;font-weight:700;padding:6px 12px;border-radius:4px;cursor:pointer;z-index:10;letter-spacing:1px}
+.lang-btn:hover{background:#00BCD4;color:#fff}
+.fullscreen-btn{position:fixed;top:16px;right:16px;background:#00BCD4;color:#fff;border:none;font-size:12px;font-weight:700;padding:6px 12px;border-radius:4px;cursor:pointer;z-index:10;font-family:inherit}
+.fullscreen-btn:hover{background:#0097A7}
+.header{text-align:center;padding:60px 0 20px}
+.header h1{font-size:24px;font-weight:300;color:#00BCD4;letter-spacing:4px}
+.header p{font-size:12px;color:#bbb;margin-top:6px;letter-spacing:1px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding:20px 40px 40px;max-width:1200px;margin:0 auto}
+.note{border:1px solid #e8e8e8;border-radius:10px;padding:20px;min-height:200px;display:flex;flex-direction:column;transition:box-shadow .2s;background:#fff}
+.note:focus-within{box-shadow:0 4px 20px rgba(0,188,212,.12);border-color:#00BCD4}
+.note-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.note-date{font-size:11px;color:#bbb;letter-spacing:1px}
+.note-del{background:transparent;border:none;color:#ccc;cursor:pointer;font-size:16px;padding:0;line-height:1}
+.note-del:hover{color:#e53935}
+.note-title{width:100%;border:none;font-size:16px;font-weight:600;color:#333;outline:none;margin-bottom:10px;font-family:inherit;letter-spacing:1px}
+.note-title::placeholder{color:#ccc}
+.note-body{width:100%;flex:1;border:none;resize:none;font-size:14px;color:#555;outline:none;font-family:inherit;line-height:1.6;letter-spacing:.5px}
+.note-body::placeholder{color:#ddd}
+.add-btn-wrap{text-align:center;padding:0 40px 40px}
+.add-btn{background:#fff;border:2px dashed #00BCD4;color:#00BCD4;font-size:14px;font-weight:700;padding:14px 48px;border-radius:8px;cursor:pointer;letter-spacing:2px;transition:all .2s}
+.add-btn:hover{background:rgba(0,188,212,.06)}
+.empty-state{text-align:center;padding:40px;color:#ccc;font-size:14px;letter-spacing:1px;grid-column:1/-1}
+</style>
+</head>
+<body>
+<button class="lang-btn" onclick="toggleLang()" id="langBtn">中/EN</button>
+<button class="fullscreen-btn" onclick="toggleFullscreen()" id="fsBtn">全屏</button>
+<div class="header"><h1 data-key="title">便签助手</h1><p id="subtitle" data-key="subtitle">轻量备忘 · 自动保存</p></div>
+<div class="grid" id="grid"></div>
+<div class="add-btn-wrap"><button class="add-btn" id="addBtn" onclick="addNote()" data-key="add">+ 新建便签</button></div>
+<script>
+let lang='zh';
+const L={
+zh:{title:'便签助手',subtitle:'轻量备忘 · 自动保存',add:'+ 新建便签',new_title:'新便签',empty:'暂无便签，点击下方按钮创建第一条'},
+en:{title:'Memo Notes',subtitle:'Lightweight Notes · Auto-save',add:'+ New Note',new_title:'New Note',empty:'No notes yet. Click below to create one.'}
+};
+function t(k){return L[lang][k]||k}
+function toggleLang(){lang=lang==='zh'?'en':'zh';updateTexts();renderAll()}
+function updateTexts(){document.querySelectorAll('[data-key]').forEach(el=>{let k=el.getAttribute('data-key');if(L[lang][k])el.textContent=L[lang][k]})}
+function toggleFullscreen(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){let e=document.documentElement;e.requestFullscreen?e.requestFullscreen():e.webkitRequestFullscreen()}else{document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen()}
+}
+const STORAGE_KEY='memo_notes_data';
+function loadNotes(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch(e){return[]}}
+function saveNotes(notes){localStorage.setItem(STORAGE_KEY,JSON.stringify(notes))}
+let notes=loadNotes();
+function addNote(title){
+  notes.push({id:Date.now(),title:title||t('new_title'),body:'',created:new Date().toISOString()});saveNotes(notes);renderAll()}
+function updateNote(id,field,value){
+  let n=notes.find(x=>x.id===id);if(n){n[field]=value;saveNotes(notes)}}
+function deleteNote(id){notes=notes.filter(x=>x.id!==id);saveNotes(notes);renderAll()}
+function renderAll(){
+  let grid=document.getElementById('grid');
+  if(notes.length===0){grid.innerHTML='<div class="empty-state">'+t('empty')+'</div>'}else{
+    grid.innerHTML=notes.map(n=>{
+      let d=new Date(n.created);let ds=(lang==='zh'?d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate():d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}));
+      return'<div class="note"><div class="note-header"><span class="note-date">'+ds+'</span><button class="note-del" onclick="deleteNote('+n.id+')" title="删除">✕</button></div><input class="note-title" value="'+escapeHtml(n.title)+'" oninput="updateNote('+n.id+',\'title\',this.value)" placeholder="'+t('new_title')+'"><textarea class="note-body" oninput="updateNote('+n.id+',\'body\',this.value)" placeholder="...">'+escapeHtml(n.body)+'</textarea></div>'
+    }).join('')}
+}
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+renderAll();updateTexts();
+</script>
+</body>
+</html>
