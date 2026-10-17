@@ -2,72 +2,281 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>便签助手 | Memo Notes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>笔记助手 · 文本整理工具</title>
+<meta name="description" content="文本统计、去空行、去重、排序、大小写转换">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<meta name="theme-color" content="#66bb6a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="笔记助手">
 <style>
+
+:root{
+  --bg:#f4f5f7;           /* 页面底色：浅灰，避免纯白刺眼 */
+  --bg-glow:#ffffff;      /* 顶部径向光晕色，制造轻微的空间感 */
+  --surface:#ffffff;      /* 卡片底色 */
+  --surface-2:#fafbfc;    /* 卡片内的次级区块（输入框、结果区） */
+  --text:#16181d;         /* 主文字 */
+  --soft:#5d636e;         /* 次要文字 */
+  --mute:#8b929e;         /* 弱化文字（提示、单位、占位符） */
+  --line:#e6e8ec;         /* 分割线与边框 */
+  --accent:#26a69a;       /* 强调色（各玩具不同） */
+  --accent-soft:#e6f4f2;  /* 强调色的浅色版，用于底色块 */
+  --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#fff;color:#333;height:100vh;overflow-y:auto;user-select:none}
-.lang-btn{position:fixed;top:16px;left:16px;background:transparent;border:2px solid #00BCD4;color:#00BCD4;font-size:12px;font-weight:700;padding:6px 12px;border-radius:4px;cursor:pointer;z-index:10;letter-spacing:1px}
-.lang-btn:hover{background:#00BCD4;color:#fff}
-.fullscreen-btn{position:fixed;top:16px;right:16px;background:#00BCD4;color:#fff;border:none;font-size:12px;font-weight:700;padding:6px 12px;border-radius:4px;cursor:pointer;z-index:10;font-family:inherit}
-.fullscreen-btn:hover{background:#0097A7}
-.header{text-align:center;padding:60px 0 20px}
-.header h1{font-size:24px;font-weight:300;color:#00BCD4;letter-spacing:4px}
-.header p{font-size:12px;color:#bbb;margin-top:6px;letter-spacing:1px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding:20px 40px 40px;max-width:1200px;margin:0 auto}
-.note{border:1px solid #e8e8e8;border-radius:10px;padding:20px;min-height:200px;display:flex;flex-direction:column;transition:box-shadow .2s;background:#fff}
-.note:focus-within{box-shadow:0 4px 20px rgba(0,188,212,.12);border-color:#00BCD4}
-.note-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.note-date{font-size:11px;color:#bbb;letter-spacing:1px}
-.note-del{background:transparent;border:none;color:#ccc;cursor:pointer;font-size:16px;padding:0;line-height:1}
-.note-del:hover{color:#e53935}
-.note-title{width:100%;border:none;font-size:16px;font-weight:600;color:#333;outline:none;margin-bottom:10px;font-family:inherit;letter-spacing:1px}
-.note-title::placeholder{color:#ccc}
-.note-body{width:100%;flex:1;border:none;resize:none;font-size:14px;color:#555;outline:none;font-family:inherit;line-height:1.6;letter-spacing:.5px}
-.note-body::placeholder{color:#ddd}
-.add-btn-wrap{text-align:center;padding:0 40px 40px}
-.add-btn{background:#fff;border:2px dashed #00BCD4;color:#00BCD4;font-size:14px;font-weight:700;padding:14px 48px;border-radius:8px;cursor:pointer;letter-spacing:2px;transition:all .2s}
-.add-btn:hover{background:rgba(0,188,212,.06)}
-.empty-state{text-align:center;padding:40px;color:#ccc;font-size:14px;letter-spacing:1px;grid-column:1/-1}
+
+body{
+  font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg);
+  /* 顶部一层极淡光晕，比死板的纯色更有层次 */
+  background-image:radial-gradient(120% 80% at 50% 0%, var(--bg-glow) 0%, rgba(255,255,255,0) 62%);
+  background-attachment:fixed;
+  color:var(--text);
+  min-height:100dvh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px; -webkit-font-smoothing:antialiased;
+}
+
+.app{width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:20px}
+
+.head{text-align:center}
+.head h1{font-size:22px; font-weight:600; letter-spacing:.5px}
+.head p{font-size:13px; color:var(--mute); margin-top:6px}
+
+.card{
+  width:100%; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow);
+}
+
+.stage{
+  width:288px; height:288px; position:relative;
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:50%; box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center;
+}
+.stage canvas{border-radius:50%}
+
+.phase{
+  font-size:29px; font-weight:300; letter-spacing:6px;
+  color:var(--accent); min-height:42px; text-align:center;
+  transition:color .4s var(--ease);
+}
+.cd{font-size:15px; color:var(--soft); font-variant-numeric:tabular-nums; min-height:22px}
+.meta{font-size:13px; color:var(--mute); min-height:20px; text-align:center}
+
+.row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+.stats{display:flex; gap:10px; width:100%}
+.stat{
+  flex:1; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:var(--r-md); padding:12px; text-align:center;
+}
+.stat .k{font-size:11px; color:var(--mute); letter-spacing:1px}
+.stat .v{font-size:21px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums}
+
+.chip{
+  padding:9px 18px; font-size:13px; font-weight:500; font-family:inherit;
+  background:var(--surface); color:var(--soft);
+  border:1px solid var(--line); border-radius:999px; cursor:pointer;
+  transition:all .2s var(--ease);
+}
+.chip:hover{border-color:var(--accent); color:var(--accent)}
+.chip.active{
+  background:var(--accent); border-color:var(--accent); color:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.14);
+}
+
+.btn{
+  padding:13px 42px; font-size:15px; font-weight:600; font-family:inherit;
+  letter-spacing:3px; background:var(--accent); color:#fff;
+  border:none; border-radius:var(--r-md); cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .2s var(--ease);
+  box-shadow:0 6px 20px rgba(0,0,0,.16);
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--soft); box-shadow:none}
+
+.lang{
+  position:fixed; top:16px; right:16px; z-index:20;
+  padding:7px 14px; font-size:12px; font-weight:600; font-family:inherit;
+  background:var(--surface); color:var(--soft);
+  border:1px solid var(--line); border-radius:999px; cursor:pointer;
+  transition:all .2s var(--ease);
+}
+.lang:hover{border-color:var(--accent); color:var(--accent)}
+
+.hint{font-size:12px; color:var(--mute); text-align:center; line-height:1.7}
+
+@media (max-width:380px){
+  .stage{width:250px;height:250px}
+  .phase{font-size:25px; letter-spacing:4px}
+}
+
+:root{ --accent:#66bb6a; --accent-soft:#e8f5e9; }
+
+textarea.ta{
+  width:100%; min-height:180px; padding:16px; font-size:15px; font-family:inherit;
+  line-height:1.8; border:1px solid var(--line); border-radius:var(--r-md);
+  background:var(--surface-2); color:var(--text); resize:vertical;
+}
+textarea.ta:focus{outline:none; border-color:var(--accent); background:var(--surface)}
+.tools{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
+
 </style>
 </head>
 <body>
-<button class="lang-btn" onclick="toggleLang()" id="langBtn">中/EN</button>
-<button class="fullscreen-btn" onclick="toggleFullscreen()" id="fsBtn">全屏</button>
-<div class="header"><h1 data-key="title">便签助手</h1><p id="subtitle" data-key="subtitle">轻量备忘 · 自动保存</p></div>
-<div class="grid" id="grid"></div>
-<div class="add-btn-wrap"><button class="add-btn" id="addBtn" onclick="addNote()" data-key="add">+ 新建便签</button></div>
+<button class="lang" id="langBtn" onclick="toggleLang()">EN</button>
+<div class="app">
+
+  <div class="head">
+    <h1 id="t_title">笔记助手</h1>
+  </div>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><div class="k" id="t_chars">字符</div><div class="v" id="vChars">0</div></div>
+      <div class="stat"><div class="k" id="t_words">词数</div><div class="v" id="vWords">0</div></div>
+      <div class="stat"><div class="k" id="t_lines">行数</div><div class="v" id="vLines">0</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <textarea class="ta" id="ta" placeholder="粘贴或输入文本…" oninput="stat()"></textarea>
+    <div class="tools" id="tools"></div>
+  </div>
+
+  <div class="row">
+    <button class="btn ghost" onclick="downloadTxt()">下载</button>
+  </div>
+
+  <div class="hint" id="t_hint">所有处理都在本地完成，不上传</div>
+
+</div>
 <script>
-let lang='zh';
-const L={
-zh:{title:'便签助手',subtitle:'轻量备忘 · 自动保存',add:'+ 新建便签',new_title:'新便签',empty:'暂无便签，点击下方按钮创建第一条'},
-en:{title:'Memo Notes',subtitle:'Lightweight Notes · Auto-save',add:'+ New Note',new_title:'New Note',empty:'No notes yet. Click below to create one.'}
+
+/* ============================================================
+ * 笔记助手 · 文本整理
+ * ------------------------------------------------------------
+ * 工具箱设计：
+ *   每个整理操作都是一个「纯函数」——接收字符串，返回新字符串。
+ *   纯函数的好处：可单独测试、可随意组合、不会互相污染状态。
+ * ========================================================== */
+
+const ta = document.getElementById('ta');
+
+const I18N = {
+  zh:{ title:'笔记助手', hint:'所有处理都在本地完成，不上传',
+       chars:'字符', words:'词数', lines:'行数',
+       trim:'去首尾空格', squeeze:'压缩空行', dedupe:'去重行',
+       sort:'排序行', upper:'转大写', lower:'转小写',
+       clear:'清空', download:'下载', copied:'已复制' },
+  en:{ title:'Note Helper', hint:'Everything runs locally',
+       chars:'Chars', words:'Words', lines:'Lines',
+       trim:'Trim', squeeze:'Squeeze', dedupe:'Dedupe',
+       sort:'Sort', upper:'Upper', lower:'Lower',
+       clear:'Clear', download:'Download', copied:'Copied' }
 };
-function t(k){return L[lang][k]||k}
-function toggleLang(){lang=lang==='zh'?'en':'zh';updateTexts();renderAll()}
-function updateTexts(){document.querySelectorAll('[data-key]').forEach(el=>{let k=el.getAttribute('data-key');if(L[lang][k])el.textContent=L[lang][k]})}
-function toggleFullscreen(){
-  if(!document.fullscreenElement&&!document.webkitFullscreenElement){let e=document.documentElement;e.requestFullscreen?e.requestFullscreen():e.webkitRequestFullscreen()}else{document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen()}
+let lang = 'zh';
+
+/* ---------- 整理操作（纯函数） ---------- */
+
+/** 去掉每行首尾空白 */
+function doTrim(s){
+  return s.split('\n').map(function(l){ return l.trim(); }).join('\n');
 }
-const STORAGE_KEY='memo_notes_data';
-function loadNotes(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch(e){return[]}}
-function saveNotes(notes){localStorage.setItem(STORAGE_KEY,JSON.stringify(notes))}
-let notes=loadNotes();
-function addNote(title){
-  notes.push({id:Date.now(),title:title||t('new_title'),body:'',created:new Date().toISOString()});saveNotes(notes);renderAll()}
-function updateNote(id,field,value){
-  let n=notes.find(x=>x.id===id);if(n){n[field]=value;saveNotes(notes)}}
-function deleteNote(id){notes=notes.filter(x=>x.id!==id);saveNotes(notes);renderAll()}
-function renderAll(){
-  let grid=document.getElementById('grid');
-  if(notes.length===0){grid.innerHTML='<div class="empty-state">'+t('empty')+'</div>'}else{
-    grid.innerHTML=notes.map(n=>{
-      let d=new Date(n.created);let ds=(lang==='zh'?d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate():d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}));
-      return'<div class="note"><div class="note-header"><span class="note-date">'+ds+'</span><button class="note-del" onclick="deleteNote('+n.id+')" title="删除">✕</button></div><input class="note-title" value="'+escapeHtml(n.title)+'" oninput="updateNote('+n.id+',\'title\',this.value)" placeholder="'+t('new_title')+'"><textarea class="note-body" oninput="updateNote('+n.id+',\'body\',this.value)" placeholder="...">'+escapeHtml(n.body)+'</textarea></div>'
-    }).join('')}
+
+/** 把连续多个空行压成一个 */
+function doSqueeze(s){
+  return s.replace(/\n{3,}/g, '\n\n');
 }
-function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-renderAll();updateTexts();
+
+/** 去掉重复行，保留首次出现的顺序 */
+function doDedupe(s){
+  const seen = {};
+  const out = [];
+  s.split('\n').forEach(function(l){
+    if (!seen[l]){ seen[l] = 1; out.push(l); }
+  });
+  return out.join('\n');
+}
+
+/** 按字典序排序行 */
+function doSort(s){
+  return s.split('\n').slice().sort().join('\n');
+}
+
+/* ---------- 统计 ---------- */
+
+/** 统计字符数、词数、行数。词数按「空白分隔的非空片段」计算 */
+function stat(){
+  const t = ta.value;
+  document.getElementById('vChars').textContent = t.length;
+  document.getElementById('vWords').textContent = t.trim() ? t.trim().split(/\s+/).length : 0;
+  document.getElementById('vLines').textContent = t ? t.split('\n').length : 0;
+}
+
+/* ---------- 界面 ---------- */
+
+const TOOLS = [
+  ['trim',  function(){ return doTrim(ta.value); }],
+  ['squeeze',function(){ return doSqueeze(ta.value); }],
+  ['dedupe', function(){ return doDedupe(ta.value); }],
+  ['sort',  function(){ return doSort(ta.value); }],
+  ['upper', function(){ return ta.value.toUpperCase(); }],
+  ['lower', function(){ return ta.value.toLowerCase(); }]
+];
+
+function buildTools(){
+  const box = document.getElementById('tools');
+  box.innerHTML = '';
+  TOOLS.forEach(function(item){
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = I18N[lang][item[0]];
+    b.onclick = function(){
+      ta.value = item[1]();      /* 调用纯函数，用返回值覆盖输入框 */
+      stat();
+    };
+    box.appendChild(b);
+  });
+}
+
+function refresh(){
+  const L = I18N[lang];
+  document.getElementById('t_title').textContent = L.title;
+  document.getElementById('t_hint').textContent  = L.hint;
+  document.getElementById('t_chars').textContent = L.chars;
+  document.getElementById('t_words').textContent = L.words;
+  document.getElementById('t_lines').textContent = L.lines;
+  document.getElementById('langBtn').textContent = (lang==='zh') ? 'EN' : '中';
+  buildTools();
+}
+function toggleLang(){ lang = (lang==='zh') ? 'en' : 'zh'; refresh(); }
+
+/** 导出 .txt（Blob + 临时 a 标签，纯前端，无需服务器） */
+function downloadTxt(){
+  const blob = new Blob([ta.value], { type:'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'note.txt'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+refresh();
+stat();
+
+/* ---------- PWA 注册 ----------
+ * 注册 Service Worker 后本页被缓存，断网也能打开。
+ * 放在最后且 catch 掉异常：即使浏览器不支持也不影响正常功能。 */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
 </script>
 </body>
 </html>

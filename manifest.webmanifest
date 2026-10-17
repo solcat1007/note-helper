@@ -1,0 +1,19 @@
+{
+  "name": "笔记助手 · 小工具",
+  "short_name": "笔记助手",
+  "description": "文本整理与字数统计工具",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f7f9",
+  "theme_color": "#66bb6a",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
