@@ -1,7 +1,8 @@
 {
+  "version": "2.0.0",
   "name": "笔记助手 · 小工具",
   "short_name": "笔记助手",
-  "description": "文本整理与字数统计工具",
+  "description": "笔记/待办双模式、搜索与快捷短语 v2.0",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
