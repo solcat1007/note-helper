@@ -3,223 +3,204 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>笔记助手 · 文本整理工具</title>
-<meta name="description" content="文本统计、去空行、去重、排序、大小写转换">
+<title>笔记助手 · 双模式文本工具 v2.0</title>
+<meta name="description" content="笔记/待办双模式、搜索、快捷短语与文本整理工具">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg">
 <meta name="theme-color" content="#66bb6a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="笔记助手">
 <style>
-
 :root{
-  --bg:#f4f5f7;           /* 页面底色：浅灰，避免纯白刺眼 */
-  --bg-glow:#ffffff;      /* 顶部径向光晕色，制造轻微的空间感 */
-  --surface:#ffffff;      /* 卡片底色 */
-  --surface-2:#fafbfc;    /* 卡片内的次级区块（输入框、结果区） */
-  --text:#16181d;         /* 主文字 */
-  --soft:#5d636e;         /* 次要文字 */
-  --mute:#8b929e;         /* 弱化文字（提示、单位、占位符） */
-  --line:#e6e8ec;         /* 分割线与边框 */
-  --accent:#26a69a;       /* 强调色（各玩具不同） */
-  --accent-soft:#e6f4f2;  /* 强调色的浅色版，用于底色块 */
+  --bg:#f4f6f9; --surface:#ffffff; --surface-2:#f7f9fb;
+  --text:#16181d; --soft:#5d636e; --mute:#8b929e; --line:#e6e8ec;
+  --accent:#66bb6a; --accent-soft:#e8f5e9;
   --r-lg:20px; --r-md:14px; --r-sm:10px;
   --ease:cubic-bezier(.4,0,.2,1);
-  --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.06);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-
 body{
   font-family:system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
   background:var(--bg);
-  /* 顶部一层极淡光晕，比死板的纯色更有层次 */
-  background-image:radial-gradient(120% 80% at 50% 0%, var(--bg-glow) 0%, rgba(255,255,255,0) 62%);
-  background-attachment:fixed;
-  color:var(--text);
-  min-height:100dvh;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:24px; -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(120% 70% at 50% 0%,var(--accent-soft) 0%,rgba(255,255,255,0) 62%);
+  background-attachment:fixed;color:var(--text);min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;padding:20px 16px 44px;
+  -webkit-font-smoothing:antialiased;
 }
-
-.app{width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; gap:20px}
-
-.head{text-align:center}
-.head h1{font-size:22px; font-weight:600; letter-spacing:.5px}
-.head p{font-size:13px; color:var(--mute); margin-top:6px}
-
-.card{
-  width:100%; background:var(--surface); border:1px solid var(--line);
-  border-radius:var(--r-lg); padding:22px; box-shadow:var(--shadow);
-}
-
-.stage{
-  width:288px; height:288px; position:relative;
-  background:var(--surface); border:1px solid var(--line);
-  border-radius:50%; box-shadow:var(--shadow);
-  display:flex; align-items:center; justify-content:center;
-}
-.stage canvas{border-radius:50%}
-
-.phase{
-  font-size:29px; font-weight:300; letter-spacing:6px;
-  color:var(--accent); min-height:42px; text-align:center;
-  transition:color .4s var(--ease);
-}
-.cd{font-size:15px; color:var(--soft); font-variant-numeric:tabular-nums; min-height:22px}
-.meta{font-size:13px; color:var(--mute); min-height:20px; text-align:center}
-
-.row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
-.stats{display:flex; gap:10px; width:100%}
-.stat{
-  flex:1; background:var(--surface-2); border:1px solid var(--line);
-  border-radius:var(--r-md); padding:12px; text-align:center;
-}
-.stat .k{font-size:11px; color:var(--mute); letter-spacing:1px}
-.stat .v{font-size:21px; font-weight:600; margin-top:3px; font-variant-numeric:tabular-nums}
-
-.chip{
-  padding:9px 18px; font-size:13px; font-weight:500; font-family:inherit;
-  background:var(--surface); color:var(--soft);
-  border:1px solid var(--line); border-radius:999px; cursor:pointer;
-  transition:all .2s var(--ease);
-}
-.chip:hover{border-color:var(--accent); color:var(--accent)}
-.chip.active{
-  background:var(--accent); border-color:var(--accent); color:#fff;
-  box-shadow:0 4px 14px rgba(0,0,0,.14);
-}
-
-.btn{
-  padding:13px 42px; font-size:15px; font-weight:600; font-family:inherit;
-  letter-spacing:3px; background:var(--accent); color:#fff;
-  border:none; border-radius:var(--r-md); cursor:pointer;
-  transition:transform .15s var(--ease), box-shadow .2s var(--ease);
-  box-shadow:0 6px 20px rgba(0,0,0,.16);
-}
-.btn:hover{transform:translateY(-1px)}
-.btn:active{transform:translateY(0)}
-.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--soft); box-shadow:none}
-
+.app{width:100%;max-width:520px;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:2px}
+.head h1{font-size:22px;font-weight:700;letter-spacing:.5px}
+.head p{font-size:12px;color:var(--mute);margin-top:5px}
 .lang{
-  position:fixed; top:16px; right:16px; z-index:20;
-  padding:7px 14px; font-size:12px; font-weight:600; font-family:inherit;
-  background:var(--surface); color:var(--soft);
-  border:1px solid var(--line); border-radius:999px; cursor:pointer;
-  transition:all .2s var(--ease);
+  flex-shrink:0;padding:7px 14px;font-size:12px;font-weight:600;font-family:inherit;
+  background:var(--surface);color:var(--soft);border:1px solid var(--line);
+  border-radius:999px;cursor:pointer;transition:all .2s var(--ease);
 }
-.lang:hover{border-color:var(--accent); color:var(--accent)}
-
-.hint{font-size:12px; color:var(--mute); text-align:center; line-height:1.7}
-
-@media (max-width:380px){
-  .stage{width:250px;height:250px}
-  .phase{font-size:25px; letter-spacing:4px}
+.lang:hover{border-color:var(--accent);color:var(--accent)}
+.card{
+  width:100%;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow);
 }
-
-:root{ --accent:#66bb6a; --accent-soft:#e8f5e9; }
-
+.seg{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:999px;padding:3px;width:max-content;margin-bottom:14px}
+.seg button{
+  padding:7px 18px;font-size:13px;font-family:inherit;border:0;border-radius:999px;
+  background:transparent;color:var(--mute);cursor:pointer;transition:all .2s var(--ease);
+}
+.seg button.active{background:var(--accent);color:#fff;font-weight:600}
+.stats{display:flex;gap:8px}
+.stat{flex:1;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:10px;text-align:center}
+.stat .k{font-size:11px;color:var(--mute);letter-spacing:1px}
+.stat .v{font-size:20px;font-weight:600;margin-top:3px;font-variant-numeric:tabular-nums}
+.search-wrap{position:relative;margin-bottom:12px}
+.search-wrap input{
+  width:100%;padding:11px 14px 11px 36px;font-size:14px;font-family:inherit;
+  border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);color:var(--text);
+}
+.search-wrap input:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.search-wrap .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute);font-size:14px}
 textarea.ta{
-  width:100%; min-height:180px; padding:16px; font-size:15px; font-family:inherit;
-  line-height:1.8; border:1px solid var(--line); border-radius:var(--r-md);
-  background:var(--surface-2); color:var(--text); resize:vertical;
+  width:100%;min-height:190px;padding:15px;font-size:15px;font-family:inherit;
+  line-height:1.8;border:1px solid var(--line);border-radius:var(--r-md);
+  background:var(--surface-2);color:var(--text);resize:vertical;
 }
-textarea.ta:focus{outline:none; border-color:var(--accent); background:var(--surface)}
-.tools{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
-
+textarea.ta:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.tools{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.chip{
+  padding:8px 13px;font-size:12px;font-weight:500;font-family:inherit;
+  background:var(--surface);color:var(--soft);border:1px solid var(--line);
+  border-radius:999px;cursor:pointer;transition:all .2s var(--ease);
+}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn{
+  padding:11px 22px;font-size:14px;font-weight:600;font-family:inherit;
+  background:var(--accent);color:#fff;border:0;border-radius:var(--r-md);cursor:pointer;
+}
+.btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--soft)}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-hd .t{font-size:14px;font-weight:600}
+.link{font-family:inherit;font-size:12px;color:var(--mute);background:none;border:0;cursor:pointer}
+.link:hover{color:var(--accent)}
+.phrases{display:flex;gap:7px;flex-wrap:wrap}
+.phrases .chip{padding:6px 11px;font-size:11px}
+.results{
+  width:100%;min-height:60px;max-height:170px;overflow-y:auto;padding:12px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);
+  font-size:13px;line-height:1.7;color:var(--soft);white-space:pre-wrap;word-break:break-all;
+  display:none;
+}
+.results mark{background:#fff3a3;color:#16181d;border-radius:2px}
+.todo-add{display:flex;gap:8px;margin-bottom:12px}
+.todo-add input{flex:1;min-width:0}
+.todo-list{display:flex;flex-direction:column;gap:7px;max-height:300px;overflow-y:auto}
+.todo-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px}
+.todo-row.done .tt{text-decoration:line-through;color:var(--mute)}
+.chk{width:20px;height:20px;border:1.5px solid var(--line);border-radius:6px;background:var(--surface);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0}
+.chk.on{background:var(--accent);border-color:var(--accent)}
+.todo-row .tt{flex:1;word-break:break-all}
+.mini{background:none;border:0;color:var(--mute);font-size:15px;cursor:pointer}
+.mini:hover{color:#ef5350}
+.empty{font-size:12px;color:var(--mute);text-align:center;padding:14px 0}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--mute);text-align:center;line-height:1.7}
+.toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,20px);background:rgba(22,24,29,.92);
+  color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;z-index:1000;opacity:0;
+  pointer-events:none;transition:all .25s var(--ease)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
-<button class="lang" id="langBtn" onclick="toggleLang()">EN</button>
 <div class="app">
-
   <div class="head">
-    <h1 id="t_title">笔记助手</h1>
+    <div><h1 id="t_title">笔记助手</h1><p id="t_sub">笔记 / 待办双模式 · 搜索 · 快捷短语</p></div>
+    <button class="lang" id="langBtn" onclick="toggleLang()">EN</button>
   </div>
 
   <div class="card">
-    <div class="stats">
-      <div class="stat"><div class="k" id="t_chars">字符</div><div class="v" id="vChars">0</div></div>
-      <div class="stat"><div class="k" id="t_words">词数</div><div class="v" id="vWords">0</div></div>
-      <div class="stat"><div class="k" id="t_lines">行数</div><div class="v" id="vLines">0</div></div>
+    <div class="seg">
+      <button id="modeNote" class="active" onclick="setMode('note')">◈ <span id="t_modeNote">笔记模式</span></button>
+      <button id="modeTodo" onclick="setMode('todo')">☑ <span id="t_modeTodo">待办模式</span></button>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="card">
+    <div class="search-wrap">
+      <span class="ico">⌕</span>
+      <input type="text" id="search" placeholder="搜索内容…" oninput="runSearch()">
+    </div>
+    <div id="notePanel">
+      <textarea class="ta" id="ta" placeholder="粘贴或输入文本…" oninput="onTextEdit()"></textarea>
+      <div class="tools" id="tools"></div>
+      <div class="results" id="results"></div>
+    </div>
+    <div id="todoPanel" style="display:none">
+      <div class="todo-add">
+        <input type="text" id="todoInput" placeholder="添加一条待办…">
+        <button class="btn" onclick="addTodo()">+</button>
+      </div>
+      <div class="todo-list" id="todoList"></div>
     </div>
   </div>
 
   <div class="card">
-    <textarea class="ta" id="ta" placeholder="粘贴或输入文本…" oninput="stat()"></textarea>
-    <div class="tools" id="tools"></div>
+    <div class="card-hd"><span class="t" id="t_phrases">快捷短语（点击插入）</span>
+      <button class="link" id="t_addphrase" onclick="addPhrase()">+ 自定义</button></div>
+    <div class="phrases" id="phrases"></div>
   </div>
 
   <div class="row">
-    <button class="btn ghost" onclick="downloadTxt()">下载</button>
+    <button class="btn ghost" onclick="downloadTxt()">⇩ <span id="t_download">下载</span></button>
   </div>
-
   <div class="hint" id="t_hint">所有处理都在本地完成，不上传</div>
-
 </div>
-<script>
+<div class="toast" id="toast"></div>
 
+<script>
 /* ============================================================
- * 笔记助手 · 文本整理
+ * 笔记助手 v2.0
  * ------------------------------------------------------------
- * 工具箱设计：
- *   每个整理操作都是一个「纯函数」——接收字符串，返回新字符串。
- *   纯函数的好处：可单独测试、可随意组合、不会互相污染状态。
+ * 整理操作保持「纯函数」设计：接收字符串，返回新字符串，互不污染。
+ * v2.0 新增：待办/笔记双模式、搜索高亮、快捷短语（含自定义）。
  * ========================================================== */
 
 const ta = document.getElementById('ta');
+const K_TEXT = 'nh_text_v2', K_TODO = 'nh_todos_v2', K_PHRASE = 'nh_phrases_v2';
+let mode = 'note', todos = [], phrases = [];
 
 const I18N = {
-  zh:{ title:'笔记助手', hint:'所有处理都在本地完成，不上传',
-       chars:'字符', words:'词数', lines:'行数',
-       trim:'去首尾空格', squeeze:'压缩空行', dedupe:'去重行',
-       sort:'排序行', upper:'转大写', lower:'转小写',
-       clear:'清空', download:'下载', copied:'已复制' },
-  en:{ title:'Note Helper', hint:'Everything runs locally',
-       chars:'Chars', words:'Words', lines:'Lines',
-       trim:'Trim', squeeze:'Squeeze', dedupe:'Dedupe',
-       sort:'Sort', upper:'Upper', lower:'Lower',
-       clear:'Clear', download:'Download', copied:'Copied' }
+  zh:{ title:'笔记助手', sub:'笔记 / 待办双模式 · 搜索 · 快捷短语',
+       hint:'所有处理都在本地完成，不上传', modeNote:'笔记模式', modeTodo:'待办模式',
+       chars:'字符', words:'词数', lines:'行数', total:'任务', done:'已完成', left:'剩余',
+       search:'搜索内容…', phrases:'快捷短语（点击插入）', addphrase:'+ 自定义',
+       download:'下载', empty:'没有匹配的待办', noResult:'没有匹配的内容',
+       newPhrase:'输入新短语：', copied:'已插入', added:'短语已添加',
+       trim:'去首尾空格', squeeze:'压缩空行', dedupe:'去重行', sort:'排序行',
+       upper:'转大写', lower:'转小写', clear:'清空' },
+  en:{ title:'Note Helper', sub:'Notes / Todos · Search · Quick phrases',
+       hint:'Everything runs locally', modeNote:'Notes', modeTodo:'Todos',
+       chars:'Chars', words:'Words', lines:'Lines', total:'Tasks', done:'Done', left:'Left',
+       search:'Search…', phrases:'Quick phrases (click to insert)', addphrase:'+ Custom',
+       download:'Download', empty:'No matching todos', noResult:'No matches',
+       newPhrase:'New phrase:', copied:'Inserted', added:'Phrase added',
+       trim:'Trim', squeeze:'Squeeze', dedupe:'Dedupe', sort:'Sort',
+       upper:'Upper', lower:'Lower', clear:'Clear' }
 };
 let lang = 'zh';
 
 /* ---------- 整理操作（纯函数） ---------- */
-
-/** 去掉每行首尾空白 */
-function doTrim(s){
-  return s.split('\n').map(function(l){ return l.trim(); }).join('\n');
-}
-
-/** 把连续多个空行压成一个 */
-function doSqueeze(s){
-  return s.replace(/\n{3,}/g, '\n\n');
-}
-
-/** 去掉重复行，保留首次出现的顺序 */
+function doTrim(s){ return s.split('\n').map(function(l){ return l.trim(); }).join('\n'); }
+function doSqueeze(s){ return s.replace(/\n{3,}/g, '\n\n'); }
 function doDedupe(s){
-  const seen = {};
-  const out = [];
-  s.split('\n').forEach(function(l){
-    if (!seen[l]){ seen[l] = 1; out.push(l); }
-  });
+  const seen = {}, out = [];
+  s.split('\n').forEach(function(l){ if (!seen[l]){ seen[l]=1; out.push(l); } });
   return out.join('\n');
 }
-
-/** 按字典序排序行 */
-function doSort(s){
-  return s.split('\n').slice().sort().join('\n');
-}
-
-/* ---------- 统计 ---------- */
-
-/** 统计字符数、词数、行数。词数按「空白分隔的非空片段」计算 */
-function stat(){
-  const t = ta.value;
-  document.getElementById('vChars').textContent = t.length;
-  document.getElementById('vWords').textContent = t.trim() ? t.trim().split(/\s+/).length : 0;
-  document.getElementById('vLines').textContent = t ? t.split('\n').length : 0;
-}
-
-/* ---------- 界面 ---------- */
+function doSort(s){ return s.split('\n').slice().sort().join('\n'); }
 
 const TOOLS = [
   ['trim',  function(){ return doTrim(ta.value); }],
@@ -227,56 +208,372 @@ const TOOLS = [
   ['dedupe', function(){ return doDedupe(ta.value); }],
   ['sort',  function(){ return doSort(ta.value); }],
   ['upper', function(){ return ta.value.toUpperCase(); }],
-  ['lower', function(){ return ta.value.toLowerCase(); }]
+  ['lower', function(){ return ta.value.toLowerCase(); }],
+  ['clear', function(){ return ''; }]
 ];
+
+/* ---------- 存取 ---------- */
+function load(){
+  try{ ta.value = localStorage.getItem(K_TEXT) || ''; }catch(e){}
+  try{ todos = JSON.parse(localStorage.getItem(K_TODO)) || []; }catch(e){ todos = []; }
+  try{
+    phrases = JSON.parse(localStorage.getItem(K_PHRASE));
+    if (!Array.isArray(phrases)) throw 0;
+  }catch(e){
+    phrases = [
+      { n:'日期', v:new Date().toLocaleDateString('zh-CN') },
+      { n:'时间', v:new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) },
+      { n:'邮件', v:'example@email.com' },
+      { n:'签名', v:'—— SOLCAT' }
+    ];
+  }
+}
+function saveText(){ try{ localStorage.setItem(K_TEXT, ta.value); }catch(e){} }
+function saveTodos(){ try{ localStorage.setItem(K_TODO, JSON.stringify(todos)); }catch(e){} }
+function savePhrases(){ try{ localStorage.setItem(K_PHRASE, JSON.stringify(phrases)); }catch(e){} }
+
+/* ---------- 统计 ---------- */
+function stat(){
+  const t = ta.value;
+  const done = todos.filter(function(x){ return x.done; }).length;
+  const rows = mode === 'note'
+    ? [[I18N[lang].chars,t.length],[I18N[lang].words,t.trim()?t.trim().split(/\s+/).length:0],
+       [I18N[lang].lines,t?t.split('\n').length:0]]
+    : [[I18N[lang].total,todos.length],[I18N[lang].done,done],[I18N[lang].left,todos.length-done]];
+  const box = document.getElementById('stats');
+  box.innerHTML = '';
+  rows.forEach(function(r){
+    const d = document.createElement('div'); d.className = 'stat';
+    const k = document.createElement('div'); k.className='k'; k.textContent = r[0];
+    const v = document.createElement('div'); v.className='v'; v.textContent = r[1];
+    d.appendChild(k); d.appendChild(v); box.appendChild(d);
+  });
+}
+
+/* ---------- 搜索 ---------- */
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function runSearch(){
+  const q = document.getElementById('search').value.trim();
+  const box = document.getElementById('results');
+  if (mode === 'todo'){ renderTodos(); return; }
+  if (!q){ box.style.display = 'none'; return; }
+  const lines = ta.value.split('\n').filter(function(l){ return l.toLowerCase().includes(q.toLowerCase()); });
+  box.style.display = '';
+  if (!lines.length){ box.textContent = I18N[lang].noResult; return; }
+  const safeQ = esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('(' + safeQ + ')', 'ig');
+  box.innerHTML = lines.map(function(l){ return esc(l).replace(re, '<mark>$1</mark>'); }).join('<br>');
+}
+
+/* ---------- 模式切换 ---------- */
+function setMode(m){
+  if (mode === 'todo') saveTodos(); else saveText();
+  mode = m;
+  document.getElementById('modeNote').classList.toggle('active', m === 'note');
+  document.getElementById('modeTodo').classList.toggle('active', m === 'todo');
+  document.getElementById('notePanel').style.display = m === 'note' ? '' : 'none';
+  document.getElementById('todoPanel').style.display = m === 'todo' ? '' : 'none';
+  stat(); runSearch();
+}
+
+/* ---------- 待办 ---------- */
+function addTodo(){
+  const el = document.getElementById('todoInput');
+  const v = el.value.trim();
+  if (!v) return;
+  todos.push({ id:Date.now()+Math.random(), text:v, done:false });
+  el.value = ''; saveTodos(); renderTodos(); stat();
+}
+function toggleTodo(id){
+  todos.forEach(function(t){ if (t.id === id) t.done = !t.done; });
+  saveTodos(); renderTodos(); stat();
+}
+function removeTodo(id){
+  todos = todos.filter(function(t){ return t.id !== id; });
+  saveTodos(); renderTodos(); stat();
+}
+function renderTodos(){
+  const box = document.getElementById('todoList');
+  box.innerHTML = '';
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const shown = todos.filter(function(t){ return !q || t.text.toLowerCase().includes(q); });
+  if (!shown.length){
+    const d = document.createElement('div'); d.className = 'empty'; d.textContent = I18N[lang].empty;
+    box.appendChild(d); return;
+  }
+  shown.forEach(function(t){
+    const row = document.createElement('div');
+    row.className = 'todo-row' + (t.done ? ' done' : '');
+    const chk = document.createElement('div');
+    chk.className = 'chk' + (t.done ? ' on' : ''); chk.textContent = t.done ? '✓' : '';
+    chk.onclick = function(){ toggleTodo(t.id); };
+    const tx = document.createElement('span'); tx.className='tt'; tx.textContent = t.text;
+    const del = document.createElement('button'); del.className='mini'; del.textContent='×';
+    del.onclick = function(){ removeTodo(t.id); };
+    row.appendChild(chk); row.appendChild(tx); row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+
+/* ---------- 快捷短语 ---------- */
+function buildPhrases(){
+  const box = document.getElementById('phrases');
+  box.innerHTML = '';
+  phrases.forEach(function(p, i){
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = p.n;
+    b.onclick = function(){ insert(p.v); };
+    b.oncontextmenu = function(e){ e.preventDefault(); phrases.splice(i,1); savePhrases(); buildPhrases(); };
+    box.appendChild(b);
+  });
+}
+function insert(text){
+  if (mode === 'todo'){
+    document.getElementById('todoInput').value = text;
+    document.getElementById('todoInput').focus();
+  } else {
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    ta.value = ta.value.slice(0,s) + text + ta.value.slice(e);
+    ta.selectionStart = ta.selectionEnd = s + text.length;
+    ta.focus(); onTextEdit();
+  }
+  toast(I18N[lang].copied);
+}
+function addPhrase(){
+  const v = prompt(I18N[lang].newPhrase);
+  if (v && v.trim()){
+    phrases.push({ n:v.trim().slice(0,12), v:v.trim() });
+    savePhrases(); buildPhrases(); toast(I18N[lang].added);
+  }
+}
+
+function onTextEdit(){ saveText(); stat(); runSearch(); }
 
 function buildTools(){
   const box = document.getElementById('tools');
   box.innerHTML = '';
   TOOLS.forEach(function(item){
     const b = document.createElement('button');
-    b.className = 'chip';
-    b.textContent = I18N[lang][item[0]];
-    b.onclick = function(){
-      ta.value = item[1]();      /* 调用纯函数，用返回值覆盖输入框 */
-      stat();
-    };
+    b.className = 'chip'; b.textContent = I18N[lang][item[0]];
+    b.onclick = function(){ ta.value = item[1](); onTextEdit(); };
     box.appendChild(b);
   });
 }
 
+function downloadTxt(){
+  const txt = mode === 'note' ? ta.value : todos.map(function(t){
+    return (t.done ? '[x] ' : '[ ] ') + t.text;
+  }).join('\n');
+  const blob = new Blob([txt], { type:'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'note-helper.txt'; a.click();
+  URL.revokeObjectURL(url);
+}
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = '☠ ' + msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 1600);
+}
+
 function refresh(){
   const L = I18N[lang];
-  document.getElementById('t_title').textContent = L.title;
-  document.getElementById('t_hint').textContent  = L.hint;
-  document.getElementById('t_chars').textContent = L.chars;
-  document.getElementById('t_words').textContent = L.words;
-  document.getElementById('t_lines').textContent = L.lines;
+  ['title','sub','hint','modeNote','modeTodo','search','phrases','addphrase','download','empty']
+    .forEach(function(k){
+      const el = document.getElementById('t_'+k);
+      if (el) el.textContent = L[k];
+    });
+  document.getElementById('search').placeholder = L.search;
+  document.getElementById('todoInput').placeholder = mode === 'note' ? L.search : '添加一条待办…';
   document.getElementById('langBtn').textContent = (lang==='zh') ? 'EN' : '中';
-  buildTools();
+  buildTools(); buildPhrases(); stat(); runSearch();
 }
 function toggleLang(){ lang = (lang==='zh') ? 'en' : 'zh'; refresh(); }
 
-/** 导出 .txt（Blob + 临时 a 标签，纯前端，无需服务器） */
-function downloadTxt(){
-  const blob = new Blob([ta.value], { type:'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'note.txt'; a.click();
-  URL.revokeObjectURL(url);
-}
+/* 专属彩蛋入口：插入隐藏待办/短语 */
+window.__NH_EGG__ = function(){
+  if (mode === 'todo'){
+    todos.unshift({ id:Date.now(), text:'☠ SOLCAT 彩蛋待办', done:false });
+    saveTodos(); renderTodos();
+  } else insert('# ☠ SOLCAT EGG');
+  toast('☠ 隐藏内容已解锁');
+};
 
+load();
 refresh();
-stat();
+renderTodos();
 
-/* ---------- PWA 注册 ----------
- * 注册 Service Worker 后本页被缓存，断网也能打开。
- * 放在最后且 catch 掉异常：即使浏览器不支持也不影响正常功能。 */
 if ('serviceWorker' in navigator){
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('./sw.js').catch(function(){});
   });
 }
+</script>
+<!-- SOLCAT EASTER EGG PROTOCOL v2.0 -->
+<script>
+/* ============================================================
+ * SOLCAT EASTER EGG PROTOCOL v2.0 — 通用彩蛋引擎
+ * 零依赖 · 单文件 · 可注入任意 HTML 项目
+ * ============================================================ */
+(function(){
+  'use strict';
+  if (window.__SOLCAT_EGG__) return;
+  window.__SOLCAT_EGG__ = { version:'2.0', unlocked:new Set(), onUnlock:[] };
+
+  var E = window.__SOLCAT_EGG__;
+  var KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  var seq = [], logoClicks = 0, logoTimer = null;
+
+  /* ---------- 1. 控制台署名（ASCII Art） ---------- */
+  function banner(){
+    var art = '%c\n  ____             _   _       _   _   \n' +
+      ' / ___|  ___  _ __| |_(_) __ _| |_| |__  \n' +
+      ' \\___ \\ / _ \\| \'__| __| |/ _` | __| \'_ \\ \n' +
+      '  ___) | (_) | |  | |_| | (_| | |_| | | |\n' +
+      ' |____/ \\___/|_|   \\__|_|\\__,_|\\__|_| |_|\n';
+    console.log(art, 'color:#26a69a;font-family:monospace;font-weight:bold');
+    console.log('%c☠ SOLCAT EASTER EGG PROTOCOL v2.0 — 你找到了隐藏入口',
+      'color:#666;font-size:11px;letter-spacing:1px');
+    console.log('%c提示：↑↑↓↓←→←→BA · 连点标题 5 次 · 输入 solcat · Ctrl+Shift+T',
+      'color:#999;font-size:10px');
+  }
+
+  /* ---------- 2. 烟花彩带粒子 ---------- */
+  function confetti(){
+    var colors = ['#26a69a','#42a5f5','#ef5350','#ffca28','#ab47bc','#66bb6a','#ff7043'];
+    var cvs = document.createElement('canvas');
+    cvs.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:99999';
+    document.body.appendChild(cvs);
+    var ctx = cvs.getContext('2d'), W = cvs.width = innerWidth, H = cvs.height = innerHeight;
+    var P = [];
+    for (var i=0;i<180;i++) P.push({
+      x:W/2+(Math.random()-.5)*120, y:H*.4+(Math.random()-.5)*40,
+      vx:(Math.random()-.5)*18, vy:-Math.random()*16-4,
+      c:colors[i%colors.length], s:Math.random()*8+4, r:Math.random()*6,
+      life:1, spin:(Math.random()-.5)*.3
+    });
+    var f = 0;
+    (function draw(){
+      f++; ctx.clearRect(0,0,W,H);
+      P.forEach(function(p){
+        p.x+=p.vx; p.y+=p.vy; p.vy+=.35; p.vx*=.99; p.r+=p.spin; p.life-=.006;
+        if(p.life<=0) return;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.globalAlpha=p.life;
+        ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); ctx.restore();
+      });
+      if (f<180) requestAnimationFrame(draw); else cvs.remove();
+    })();
+  }
+
+  /* ---------- 3. 隐藏开发者面板 ---------- */
+  function devPanel(app){
+    var old = document.getElementById('__egg_panel');
+    if (old){ old.remove(); return; }
+    var d = document.createElement('div');
+    d.id='__egg_panel';
+    d.style.cssText='position:fixed;bottom:20px;right:20px;z-index:99998;width:280px;'+
+      'background:rgba(18,20,26,.94);color:#e0e0e0;border:1px solid #26a69a;border-radius:14px;'+
+      'padding:18px;font:12px/1.7 ui-monospace,monospace;backdrop-filter:blur(12px);'+
+      'box-shadow:0 12px 40px rgba(0,0,0,.4);animation:eggIn .3s ease';
+    d.innerHTML='<div style="color:#26a69a;font-weight:bold;font-size:13px;margin-bottom:10px">'+
+      '☠ SOLCAT 开发者模式</div>'+
+      '<div>应用　　: '+app+'</div>'+
+      '<div>协议　　: EGG PROTOCOL v'+E.version+'</div>'+
+      '<div>解锁数　: '+E.unlocked.size+'</div>'+
+      '<div>UA　　　: '+(navigator.userAgent.slice(0,38))+'…</div>'+
+      '<div>屏幕　　: '+innerWidth+'×'+innerHeight+'</div>'+
+      '<div>运行时间: '+Math.round(performance.now()/1000)+'s</div>'+
+      '<div style="color:#888;margin-top:10px;border-top:1px solid #333;padding-top:8px">'+
+      '已解锁: '+Array.from(E.unlocked).join(', ')+'</div>'+
+      '<button onclick="this.parentNode.remove()" style="margin-top:12px;width:100%;padding:6px;'+
+      'background:#26a69a;color:#fff;border:0;border-radius:6px;cursor:pointer">关闭</button>';
+    document.body.appendChild(d);
+  }
+
+  /* ---------- 4. 隐藏主题（赛博朋克） ---------- */
+  function cyberTheme(){
+    var s=document.getElementById('__egg_cyber');
+    if(s){ s.remove(); document.body.classList.remove('egg-cyber'); return; }
+    s=document.createElement('style'); s.id='__egg_cyber';
+    s.textContent='body.egg-cyber{filter:invert(1) hue-rotate(180deg)!important;}'+
+      'body.egg-cyber *{font-family:"Courier New",monospace!important;letter-spacing:1px}';
+    document.head.appendChild(s); document.body.classList.add('egg-cyber');
+    unlock('cyber','☠ 赛博模式已启用');
+  }
+
+  /* ---------- 5. 解锁分发 ---------- */
+  function unlock(id,msg){
+    if (E.unlocked.has(id)) return;
+    E.unlocked.add(id);
+    if (msg) console.log('%c[EGG] '+msg,'color:#ffca28;font-weight:bold');
+    E.onUnlock.forEach(function(fn){ try{fn(id);}catch(e){} });
+    var t=document.createElement('div');
+    t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'+
+      'z-index:99997;background:rgba(18,20,26,.92);color:#ffca28;padding:18px 28px;'+ 
+      'border:1px solid #ffca28;border-radius:12px;font:14px ui-monospace,monospace;'+
+      'pointer-events:none;animation:eggIn .3s ease;box-shadow:0 8px 30px rgba(0,0,0,.4)';
+    t.textContent='☠ '+msg;
+    document.body.appendChild(t); setTimeout(function(){t.remove();},2200);
+  }
+
+  /* ---------- 6. 事件绑定 ---------- */
+  function init(){
+    var app = document.title || 'SOLCAT App';
+    banner();
+
+    // Konami 秘籍
+    addEventListener('keydown', function(e){
+      var k = e.key.length===1 ? e.key.toLowerCase() : e.key;
+      seq.push(k); if(seq.length>KONAMI.length) seq.shift();
+      if (seq.length===KONAMI.length && KONAMI.every(function(v,i){return seq[i]===v;})){
+        seq=[]; confetti(); unlock('konami','KONAMI CODE 已激活！');
+      }
+      // Ctrl+Shift+T → 赛博主题
+      if (e.ctrlKey && e.shiftKey && (e.key==='T'||e.key==='t')){
+        e.preventDefault(); cyberTheme();
+      }
+      // 输入 solcat
+      if (e.key==='Enter' && window.__eggBuf__ === 'solcat'){ cyberTheme(); window.__eggBuf__=''; }
+      if (k.length===1) window.__eggBuf__ = ((window.__eggBuf__||'')+k).slice(-10);
+    });
+
+    // 连点标题 5 次 → 开发者面板
+    addEventListener('DOMContentLoaded', function(){
+      var targets = document.querySelectorAll('h1,.head h1,.logo,header h1');
+      var t = targets[0];
+      if(t){ t.style.cursor='default'; t.addEventListener('click',function(){
+        logoClicks++;
+        clearTimeout(logoTimer);
+        logoTimer=setTimeout(function(){logoClicks=0;},900);
+        if(logoClicks>=5){ logoClicks=0; devPanel(app); unlock('dev','开发者模式已解锁'); }
+      });}
+      // 给 body 加动画 keyframe
+      var a=document.createElement('style');
+      a.textContent='@keyframes eggIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}';
+      document.head.appendChild(a);
+    });
+
+    console.log('%c☠ 彩蛋引擎已加载 — 祝你玩得开心','color:#26a69a');
+  }
+
+  if (document.readyState==='loading') addEventListener('DOMContentLoaded',init);
+  else init();
+})();
+
+</script>
+<script>
+(function(){
+  var E = window.__SOLCAT_EGG__;
+  if (!E) return;
+
+    var fired = false;
+    E.onUnlock.push(function(id){
+      if (fired || ['konami','dev','cyber'].indexOf(id) < 0) return;
+      fired = true;
+      window.__NH_EGG__();
+    });
+})();
 </script>
 </body>
 </html>
